@@ -1,0 +1,140 @@
+<div class="task-launcher">
+  <div class="launcher-header">
+    <h2 class="spds-h4">On-Demand Task Orchestrator</h2>
+    <p class="spds-body launcher-subtitle">
+      Trigger immediate account aggregations, entitlement scans, or correlation passes across configured tenant sources.
+    </p>
+  </div>
+
+  @if (launchResult(); as res) {
+    <div class="result-banner" [class.result-banner--success]="res.severity === 'success'" [class.result-banner--error]="res.severity === 'error'">
+      <div class="result-content">
+        <i class="pi" [class.pi-check-circle]="res.severity === 'success'" [class.pi-exclamation-triangle]="res.severity === 'error'"></i>
+        <div>
+          <h4 class="spds-h6">{{ res.summary }}</h4>
+          <p class="spds-body-small">{{ res.detail }}</p>
+        </div>
+      </div>
+      @if (res.taskId) {
+        <p-button
+          label="Track in Task Monitor"
+          icon="pi pi-arrow-right"
+          iconPos="right"
+          severity="primary"
+          size="small"
+          (onClick)="navigateToMonitor()"
+        />
+      }
+    </div>
+  }
+
+  <div class="launcher-form-grid">
+    <!-- Source Selection Card -->
+    <div class="spds-card launcher-card">
+      <h3 class="spds-h5 card-title">1. Select Target Source</h3>
+      <p class="spds-body-small text-muted mb-4">
+        Choose the application or system source to execute the background task against.
+      </p>
+
+      <div class="form-field">
+        <label for="sourceSelect" class="form-label spds-body-bold">Source Application</label>
+        <p-select
+          id="sourceSelect"
+          [options]="taskManager.sources()"
+          [(ngModel)]="selectedSource"
+          optionLabel="name"
+          placeholder="Choose a source..."
+          [filter]="true"
+          filterBy="name,type"
+          styleClass="source-dropdown"
+        >
+          <ng-template pTemplate="selectedItem" let-selected>
+            <div class="source-item" *ngIf="selected">
+              <span class="source-name spds-body-bold">{{ selected.name }}</span>
+              <span class="source-type spds-caption text-muted">({{ selected.type }})</span>
+            </div>
+          </ng-template>
+          <ng-template pTemplate="item" let-src>
+            <div class="source-item">
+              <span class="source-name spds-body-bold">{{ src.name }}</span>
+              <span class="source-type spds-caption text-muted">Type: {{ src.type }} &middot; ID: {{ src.id }}</span>
+            </div>
+          </ng-template>
+        </p-select>
+      </div>
+
+      @if (selectedSource(); as src) {
+        <div class="source-summary">
+          <div class="summary-row">
+            <span class="label">Source ID:</span>
+            <span class="value font-mono">{{ src.id }}</span>
+          </div>
+          <div class="summary-row">
+            <span class="label">Connector Type:</span>
+            <span class="value">{{ src.type }}</span>
+          </div>
+          <div class="summary-row">
+            <span class="label">Authoritative:</span>
+            <span class="value">{{ src.authoritative ? 'Yes' : 'No' }}</span>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Aggregation Options Card -->
+    <div class="spds-card launcher-card">
+      <h3 class="spds-h5 card-title">2. Select Operation & Parameters</h3>
+      <p class="spds-body-small text-muted mb-4">
+        Configure task parameters and trigger the asynchronous background execution.
+      </p>
+
+      <!-- Optimization Toggle -->
+      <div class="toggle-option-box">
+        <div class="toggle-info">
+          <span class="spds-body-bold">Disable Optimization</span>
+          <p class="spds-body-small text-muted">
+            By default, ISC performs an optimized delta aggregation skipping unchanged records. Turn this ON to force a full re-read of all accounts.
+          </p>
+        </div>
+        <p-toggleswitch [(ngModel)]="disableOptimization" />
+      </div>
+
+      <div class="action-buttons-group">
+        <div class="action-item">
+          <div>
+            <h4 class="spds-body-bold">Account Aggregation</h4>
+            <p class="spds-body-small text-muted">
+              Reads all accounts from the target source and evaluates identity correlation.
+            </p>
+          </div>
+          <p-button
+            label="Run Account Aggregation"
+            icon="pi pi-users"
+            [disabled]="!selectedSource() || isSubmitting()"
+            [loading]="isSubmitting()"
+            (onClick)="triggerAccounts()"
+          />
+        </div>
+
+        <div class="action-divider"></div>
+
+        <div class="action-item">
+          <div>
+            <h4 class="spds-body-bold">Entitlement Aggregation</h4>
+            <p class="spds-body-small text-muted">
+              Scans groups, roles, and permissions catalog for the selected source.
+            </p>
+          </div>
+          <p-button
+            label="Run Entitlement Aggregation"
+            icon="pi pi-key"
+            severity="secondary"
+            [disabled]="!selectedSource() || isSubmitting()"
+            [loading]="isSubmitting()"
+            (onClick)="triggerEntitlements()"
+          />
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

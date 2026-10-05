@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "manifest": {
+    "alias": "batch-manager-uofi",
+    "name": {
+      "en": "Batch Manager UofI"
+    },
+    "description": {
+      "en": "Batch Operations, Task Execution Monitoring, and Scheduling Console for Identity Security Cloud"
+    },
+    "apiScopes": [
+      "idn:task-management:read",
+      "idn:task-management:write",
+      "idn:sources:read",
+      "idn:sources:manage",
+      "idn:entitlement:manage",
+      "idn:identity-profile:read",
+      "idn:identity-profile:manage",
+      "idn:remote-client:read",
+      "idn:managed-client-status:read",
+      "sp:scheduled-search:manage"
+    ],
+    "contentSecurityPolicies": {},
+    "permissionPolicy": {},
+    "iframeAllow": {},
+    "state": "ENABLED",
+    "slots": [
+      {
+        "slotId": "full-page"
+      }
+    ]
+  },
+  "build": {
+    "outDir": "./dist/batch-manager-uofi/browser",
+    "port": 4200
+  }
+}

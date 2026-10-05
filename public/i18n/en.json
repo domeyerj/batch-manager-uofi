@@ -1,0 +1,84 @@
+{
+  "nav": {
+    "tasks": "Task Monitor",
+    "launch": "Trigger Aggregations",
+    "schedules": "Schedules & Forecast",
+    "infrastructure": "Cluster Health"
+  },
+  "status": {
+    "pending": "Pending",
+    "ready": "Ready",
+    "failed": "Failed"
+  },
+  "schedules": {
+    "view": {
+      "label": "View",
+      "list": "List",
+      "calendar": "Calendar"
+    },
+    "nextRun": "Next run",
+    "nextRunNone": "None in the next 400 days",
+    "cron": {
+      "daily": "Every day at {{time}}",
+      "dailyAtTimes": "Every day at {{times}}",
+      "everyNHours": "Every {{n}} hours at :{{minute}}",
+      "everyNMinutes": "Every {{n}} minutes",
+      "weekly": "{{days}} at {{time}}",
+      "monthly": "Day {{days}} of each month at {{time}}",
+      "monthlyLastDay": "Last day of each month at {{time}}",
+      "custom": "Custom: {{expression}}"
+    },
+    "calendar": {
+      "title": "Schedule calendar",
+      "prev": "Previous month",
+      "next": "Next month",
+      "today": "Today",
+      "refresh": "Refresh",
+      "loading": "Loading…",
+      "source": "Source",
+      "allSources": "All sources",
+      "timeZone": "Schedule time zone",
+      "timeZoneHint": "Times are shown in your browser's time zone. ISC does not return a time zone for source schedules, so pick the zone they were configured in; it is also used for scheduled searches without their own zone and for ISC's daily identity processing.",
+      "layers": "Show on calendar",
+      "kinds": {
+        "ACCOUNT_AGGREGATION": "Account aggregation",
+        "GROUP_AGGREGATION": "Entitlement aggregation",
+        "SCHEDULED_SEARCH": "Scheduled search",
+        "IDENTITY_PROCESSING": "Identity processing (system)",
+        "TASK_RUN": "Completed / running tasks"
+      },
+      "identityProcessingTitle": "Scheduled identity processing",
+      "eventCount": "{{count}} events",
+      "more": "+{{count}} more",
+      "noEvents": "Nothing scheduled or recorded on this day.",
+      "forecast": "Forecast",
+      "running": "Running",
+      "col": {
+        "time": "Time",
+        "kind": "Type",
+        "name": "Name",
+        "detail": "Detail",
+        "status": "Status"
+      },
+      "notConnected": "Not connected to Identity Security Cloud, so no data can load. Open this plugin inside ISC using the ?spPluginDev= link printed by `sail ui-plugins link`, or the deployed plugin URL.",
+      "partialSources": "Schedules could not be read for {{count}} source(s); they are missing from the calendar.",
+      "warnTruncated": "\"{{name}}\" runs very frequently; only the first occurrences in this view are shown.",
+      "warnUnparsable": "Could not read the schedule for \"{{name}}\" ({{expression}}).",
+      "warnSearchNotProjected": "Scheduled search \"{{name}}\" uses a schedule type the calendar cannot project.",
+      "issue": {
+        "schedules": {
+          "forbidden": "Your account is not allowed to read source schedules (requires ORG_ADMIN, SOURCE_ADMIN or SOURCE_SUBADMIN).",
+          "failed": "Source schedules could not be loaded."
+        },
+        "searches": {
+          "forbidden": "Your account is not allowed to read scheduled searches.",
+          "failed": "Scheduled searches could not be loaded."
+        },
+        "history": {
+          "forbidden": "Your account is not allowed to read task history (requires an admin user level).",
+          "failed": "Task history could not be loaded."
+        }
+      }
+    }
+  }
+}

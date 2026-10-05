@@ -1,0 +1,52 @@
+<div class="shell">
+  <div class="shell-body">
+    <nav class="shell-sidenav">
+      <ul class="shell-sidenav__list">
+        <li>
+          <a routerLink="/tasks" routerLinkActive="shell-sidenav__link--active" class="shell-sidenav__link">
+            <i class="pi pi-chart-line mr-2"></i>
+            {{ 'nav.tasks' | translate }}
+          </a>
+        </li>
+        <li>
+          <a routerLink="/launch" routerLinkActive="shell-sidenav__link--active" class="shell-sidenav__link">
+            <i class="pi pi-play mr-2"></i>
+            {{ 'nav.launch' | translate }}
+          </a>
+        </li>
+        <li>
+          <a routerLink="/schedules" routerLinkActive="shell-sidenav__link--active" class="shell-sidenav__link">
+            <i class="pi pi-calendar mr-2"></i>
+            {{ 'nav.schedules' | translate }}
+          </a>
+        </li>
+        <li>
+          <a routerLink="/infrastructure" routerLinkActive="shell-sidenav__link--active" class="shell-sidenav__link">
+            <i class="pi pi-server mr-2"></i>
+            {{ 'nav.infrastructure' | translate }}
+          </a>
+        </li>
+      </ul>
+    </nav>
+
+    <main class="shell-content">
+      <header class="shell-content__header">
+        <div class="shell-content__title-box">
+          <h1 class="spds-h4">Batch Manager</h1>
+          <span class="spds-caption text-muted">Identity Security Cloud Operations Console</span>
+        </div>
+        <div class="shell-content__meta">
+          <p-tag [value]="'status.' + status() | translate" [severity]="handshakeSeverity[status()]" />
+          @if (context(); as ctx) {
+            <span class="shell-content__context">
+              {{ ctx.tenant.org }} &middot; {{ ctx.user.displayName }}
+            </span>
+          }
+        </div>
+      </header>
+      <div class="shell-content__card">
+        <router-outlet />
+      </div>
+    </main>
+  </div>
+</div>

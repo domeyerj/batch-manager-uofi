@@ -1,0 +1,280 @@
+<div class="tasks-monitor">
+  <!-- Header with Refresh and Live Indicators -->
+  <div class="monitor-header">
+    <div class="monitor-header__titles">
+      <h2 class="spds-h4">Identity Security Cloud Task Operations</h2>
+      <p class="spds-body monitor-subtitle">
+        Monitor active background jobs, account aggregations, and inspect recent task runs.
+      </p>
+    </div>
+
+    <div class="monitor-header__controls">
+      <div class="auto-refresh-badge">
+        <span class="live-dot" [class.live-dot--active]="taskManager.autoRefresh()"></span>
+        <span class="spds-body-small">Auto-refresh (3s):</span>
+        <button
+          type="button"
+          class="btn-toggle"
+          [class.btn-toggle--on]="taskManager.autoRefresh()"
+          (click)="taskManager.toggleAutoRefresh()"
+        >
+          {{ taskManager.autoRefresh() ? 'ON' : 'OFF' }}
+        </button>
+      </div>
+
+      <p-button
+        label="Refresh Now"
+        icon="pi pi-refresh"
+        [loading]="taskManager.isLoading()"
+        severity="secondary"
+        [outlined]="true"
+        size="small"
+        (onClick)="manualRefresh()"
+      />
+    </div>
+  </div>
+
+  @if (actionMessage(); as msg) {
+    <p-message [severity]="msg.severity" [text]="msg.text" class="action-feedback-message" />
+  }
+
+  <!-- Active Background Jobs Section -->
+  <section class="section-active-jobs">
+    <div class="section-heading">
+      <h3 class="spds-h5">
+        Active Background Jobs
+        <span class="counter-badge">{{ taskManager.activeTasks().length }}</span>
+      </h3>
+      @if (taskManager.lastUpdated(); as updated) {
+        <span class="spds-caption last-polled">Polled {{ updated | date:'HH:mm:ss' }}</span>
+      }
+    </div>
+
+    @if (taskManager.activeTasks().length === 0) {
+      <div class="empty-active-state">
+        <i class="pi pi-check-circle empty-state-icon"></i>
+        <div class="empty-state-copy">
+          <p class="spds-body-bold">No active tasks in flight</p>
+          <p class="spds-body-small text-muted">
+            All background tasks, aggregations, and synchronizations are complete.
+          </p>
+        </div>
+      </div>
+    } @else {
+      <div class="active-jobs-grid">
+        @for (task of taskManager.activeTasks(); track task.id) {
+          <div class="active-card">
+            <div class="active-card__top">
+              <div class="active-card__title-row">
+                <span class="active-card__title spds-body-bold">{{ task.description || task.uniqueName }}</span>
+                <p-tag [value]="task.type" severity="info" />
+              </div>
+              <div class="active-card__meta spds-body-small text-muted">
+                <span>Target: <strong>{{ task.target?.name || 'Tenant System' }}</strong></span>
+                <span>Launched: {{ task.launched ? (task.launched | date:'shortTime') : 'Just now' }}</span>
+                <span>Launcher: {{ task.launcher || 'System' }}</span>
+              </div>
+            </div>
+
+            <div class="active-card__progress">
+              <div class="progress-labels spds-body-small">
+                <span>{{ task.progress || 'Processing records...' }}</span>
+                <span>{{ task.percentComplete }}%</span>
+              </div>
+              <p-progressBar [value]="task.percentComplete" [showValue]="false" />
+            </div>
+
+            <div class="active-card__footer">
+              <span class="task-id-caption spds-caption font-mono">ID: {{ task.id }}</span>
+              <p-button
+                label="Abort Task"
+                icon="pi pi-times-circle"
+                severity="danger"
+                [outlined]="true"
+                size="small"
+                [loading]="terminatingTaskId() === task.id"
+                (onClick)="terminateTask(task)"
+                pTooltip="Clear stuck task by marking TERMINATED via JSONPatch"
+              />
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </section>
+
+  <!-- Execution History Table -->
+  <section class="section-history">
+    <div class="history-controls">
+      <div class="section-heading">
+        <h3 class="spds-h5">Recent Execution History</h3>
+        <span class="spds-body-small text-muted">Showing past 50 task runs (retained for 90 days)</span>
+      </div>
+
+      <div class="history-filter">
+        <span class="spds-body-small filter-label">Status Filter:</span>
+        <p-select
+          [options]="statusFilterOptions"
+          [(ngModel)]="selectedStatusFilter"
+          optionLabel="label"
+          optionValue="value"
+          styleClass="filter-select"
+        />
+      </div>
+    </div>
+
+    <p-table
+      [value]="filteredRecentTasks()"
+      [paginator]="true"
+      [rows]="10"
+      [tableStyle]="{ 'min-width': '50rem' }"
+      styleClass="p-datatable-sm history-table"
+      emptyMessage="No matching task records found."
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th pSortableColumn="uniqueName">Task / Description <p-sortIcon field="uniqueName" /></th>
+          <th pSortableColumn="type">Type <p-sortIcon field="type" /></th>
+          <th>Target</th>
+          <th pSortableColumn="launched">Started <p-sortIcon field="launched" /></th>
+          <th pSortableColumn="completed">Completed <p-sortIcon field="completed" /></th>
+          <th pSortableColumn="completionStatus">Status <p-sortIcon field="completionStatus" /></th>
+          <th style="width: 5rem"></th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-task>
+        <tr>
+          <td>
+            <div class="cell-task-name">
+              <span class="spds-body-bold">{{ task.description || task.uniqueName }}</span>
+              <span class="spds-caption text-muted font-mono">{{ task.id }}</span>
+            </div>
+          </td>
+          <td>
+            <span class="spds-caption type-pill">{{ task.type }}</span>
+          </td>
+          <td>
+            <span class="spds-body-small">{{ task.target?.name || '—' }}</span>
+          </td>
+          <td>
+            <span class="spds-body-small">{{ task.launched ? (task.launched | date:'short') : '—' }}</span>
+          </td>
+          <td>
+            <span class="spds-body-small">{{ task.completed ? (task.completed | date:'short') : '—' }}</span>
+          </td>
+          <td>
+            <p-tag
+              [value]="task.completionStatus || 'IN_FLIGHT'"
+              [severity]="getStatusSeverity(task.completionStatus)"
+            />
+          </td>
+          <td>
+            <p-button
+              icon="pi pi-eye"
+              [rounded]="true"
+              [text]="true"
+              severity="secondary"
+              size="small"
+              pTooltip="View details & counters"
+              (onClick)="viewTaskDetails(task)"
+            />
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </section>
+
+  <!-- Task Details Dialog -->
+  <p-dialog
+    header="Task Execution Details"
+    [(visible)]="detailsDialogVisible"
+    [modal]="true"
+    [style]="{ width: '50rem' }"
+    [draggable]="false"
+    [resizable]="false"
+  >
+    @if (selectedTask(); as task) {
+      <div class="task-details-body">
+        <div class="details-section">
+          <h4 class="spds-h6 section-title">Overview</h4>
+          <div class="details-grid">
+            <div class="grid-item">
+              <span class="item-label">Task ID:</span>
+              <span class="item-value font-mono">{{ task.id }}</span>
+            </div>
+            <div class="grid-item">
+              <span class="item-label">Task Name:</span>
+              <span class="item-value">{{ task.uniqueName }}</span>
+            </div>
+            <div class="grid-item">
+              <span class="item-label">Type:</span>
+              <span class="item-value">{{ task.type }}</span>
+            </div>
+            <div class="grid-item">
+              <span class="item-label">Status:</span>
+              <p-tag
+                [value]="task.completionStatus || 'IN_FLIGHT'"
+                [severity]="getStatusSeverity(task.completionStatus)"
+              />
+            </div>
+            <div class="grid-item">
+              <span class="item-label">Target:</span>
+              <span class="item-value">{{ task.target?.name || '—' }}</span>
+            </div>
+            <div class="grid-item">
+              <span class="item-label">Launcher:</span>
+              <span class="item-value">{{ task.launcher || 'System' }}</span>
+            </div>
+            <div class="grid-item">
+              <span class="item-label">Launched:</span>
+              <span class="item-value">{{ task.launched ? (task.launched | date:'medium') : '—' }}</span>
+            </div>
+            <div class="grid-item">
+              <span class="item-label">Completed:</span>
+              <span class="item-value">{{ task.completed ? (task.completed | date:'medium') : '—' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Task Attributes / Metrics -->
+        @if (task.attributes && getObjectKeys(task.attributes).length > 0) {
+          <div class="details-section">
+            <h4 class="spds-h6 section-title">Execution Counters & Metrics</h4>
+            <div class="counters-grid">
+              @for (key of getObjectKeys(task.attributes); track key) {
+                <div class="counter-box">
+                  <span class="counter-label">{{ key }}</span>
+                  <span class="counter-number">{{ getObjectValue(task.attributes, key) }}</span>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Messages & Diagnostics -->
+        @if (task.messages && task.messages.length > 0) {
+          <div class="details-section">
+            <h4 class="spds-h6 section-title">Messages & Diagnostics</h4>
+            <div class="messages-list">
+              @for (msg of task.messages; track $index) {
+                <div class="message-item" [class.message-item--error]="msg.type === 'ERROR' || msg.type === 'WARN'">
+                  <div class="message-meta">
+                    <span class="msg-type">{{ msg.type }}</span>
+                    @if (msg.key) {
+                      <span class="msg-key font-mono">{{ msg.key }}</span>
+                    }
+                  </div>
+                  <p class="msg-content">{{ msg.localizedText?.message || msg.key || 'No message details' }}</p>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    }
+    <ng-template pTemplate="footer">
+      <p-button label="Close" (onClick)="detailsDialogVisible.set(false)" severity="secondary" />
+    </ng-template>
+  </p-dialog>
+</div>

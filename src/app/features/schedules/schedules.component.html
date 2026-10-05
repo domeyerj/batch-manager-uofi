@@ -1,0 +1,152 @@
+<div class="schedules-view">
+  <div class="schedules-header">
+    <div>
+      <h2 class="spds-h4">Aggregation Schedules & Automation Inventory</h2>
+      <p class="spds-body schedules-subtitle">
+        Inspect recurring Quartz cron schedules configured for source account and entitlement aggregations.
+      </p>
+    </div>
+    <div class="view-toggle" role="group" [attr.aria-label]="'schedules.view.label' | translate">
+      <button
+        type="button"
+        class="view-toggle__btn"
+        [class.view-toggle__btn--active]="view() === 'list'"
+        [attr.aria-pressed]="view() === 'list'"
+        (click)="setView('list')"
+      >
+        {{ 'schedules.view.list' | translate }}
+      </button>
+      <button
+        type="button"
+        class="view-toggle__btn"
+        [class.view-toggle__btn--active]="view() === 'calendar'"
+        [attr.aria-pressed]="view() === 'calendar'"
+        (click)="setView('calendar')"
+      >
+        {{ 'schedules.view.calendar' | translate }}
+      </button>
+    </div>
+  </div>
+
+  @if (view() === 'calendar') {
+    <div class="schedules-card spds-card">
+      <app-schedule-calendar />
+    </div>
+  } @else {
+    <div class="schedules-card spds-card">
+      <h3 class="spds-h5 card-title">Source Aggregation Schedules</h3>
+      <p class="spds-body-small text-muted mb-4">
+        Select a source to view its active recurrence rules and Quartz cron expressions.
+      </p>
+
+      <div class="source-picker-row">
+        <label for="schedSource" class="spds-body-bold">Target Source:</label>
+        <p-select
+          id="schedSource"
+          [options]="taskManager.sources()"
+          [(ngModel)]="selectedSource"
+          optionLabel="name"
+          placeholder="Choose source to view schedules..."
+          [filter]="true"
+          filterBy="name,type"
+          styleClass="source-select"
+          (onChange)="onSourceChange($event.value)"
+        />
+      </div>
+
+      @if (isLoadingSchedules()) {
+        <div class="loading-state">
+          <i class="pi pi-spin pi-spinner"></i>
+          <span>Loading schedules...</span>
+        </div>
+      } @else if (selectedSource()) {
+        @if (sourceSchedules().length === 0) {
+          <div class="empty-schedules-state">
+            <i class="pi pi-calendar-times"></i>
+            <div>
+              <p class="spds-body-bold">No aggregation schedules configured</p>
+              <p class="spds-body-small text-muted">
+                Source "{{ selectedSource()?.name }}" does not have an active Quartz recurrence rule.
+              </p>
+            </div>
+          </div>
+        } @else {
+          <p-table [value]="sourceSchedules()" styleClass="p-datatable-sm schedules-table">
+            <ng-template pTemplate="header">
+              <tr>
+                <th>Schedule Type</th>
+                <th>Cadence</th>
+                <th>{{ 'schedules.nextRun' | translate }}</th>
+                <th>Cron Expression (Quartz)</th>
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-sched>
+              <tr>
+                <td>
+                  <p-tag [value]="sched.type" severity="info" />
+                </td>
+                <td>
+                  <span class="spds-body-bold">{{ sched.description.key | translate: sched.description.params }}</span>
+                </td>
+                <td>
+                  @if (sched.nextRun) {
+                    {{ sched.nextRun | date: 'EEE d MMM y, HH:mm' }}
+                  } @else {
+                    <span class="text-muted">{{ 'schedules.nextRunNone' | translate }}</span>
+                  }
+                </td>
+                <td>
+                  <span class="cron-code font-mono">{{ sched.cronExpression }}</span>
+                </td>
+              </tr>
+            </ng-template>
+          </p-table>
+        }
+      }
+    </div>
+
+    <!-- Scheduled Searches Info -->
+    <div class="schedules-card spds-card">
+      <h3 class="spds-h5 card-title">Automated Scheduled Searches & Reports</h3>
+      <p class="spds-body-small text-muted mb-4">
+        Tenant-wide scheduled audit searches configured to execute periodically and distribute reports.
+      </p>
+
+      @if (taskManager.scheduledSearches().length === 0) {
+        <div class="empty-schedules-state">
+          <i class="pi pi-search"></i>
+          <div>
+            <p class="spds-body-bold">No scheduled searches found</p>
+            <p class="spds-body-small text-muted">No automated recurring audit reports are active.</p>
+          </div>
+        </div>
+      } @else {
+        <p-table [value]="taskManager.scheduledSearches()" styleClass="p-datatable-sm schedules-table">
+          <ng-template pTemplate="header">
+            <tr>
+              <th>Name</th>
+              <th>Description</th>
+              <th>Status</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-search>
+            <tr>
+              <td>
+                <span class="spds-body-bold">{{ search.name }}</span>
+              </td>
+              <td>
+                <span class="spds-body-small text-muted">{{ search.description || '—' }}</span>
+              </td>
+              <td>
+                <p-tag
+                  [value]="search.enabled ? 'ENABLED' : 'DISABLED'"
+                  [severity]="search.enabled ? 'success' : 'secondary'"
+                />
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      }
+    </div>
+  }
+</div>

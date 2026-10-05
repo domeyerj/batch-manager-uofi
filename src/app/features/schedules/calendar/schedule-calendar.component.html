@@ -1,0 +1,180 @@
+<section class="cal" [attr.aria-label]="'schedules.calendar.title' | translate">
+  @if (plugin.status() === 'failed') {
+    <p-message severity="warn">
+      {{ 'schedules.calendar.notConnected' | translate }}
+    </p-message>
+  }
+
+  @for (area of ['schedules', 'searches', 'history']; track area) {
+    @if (forecast.issues()[$any(area)]; as issue) {
+      <p-message [severity]="issue === 'forbidden' ? 'warn' : 'error'">
+        {{ 'schedules.calendar.issue.' + area + '.' + issue | translate }}
+      </p-message>
+    }
+  }
+  @if (forecast.failedSources() > 0 && !forecast.issues()['schedules']) {
+    <p-message severity="warn">
+      {{ 'schedules.calendar.partialSources' | translate: { count: forecast.failedSources() } }}
+    </p-message>
+  }
+  @for (w of forecastResult().warnings; track $index) {
+    <p-message severity="secondary">{{ w.key | translate: w.params }}</p-message>
+  }
+
+  <!-- Toolbar -->
+  <div class="cal__toolbar">
+    <div class="cal__nav">
+      <button type="button" class="cal-btn" (click)="shiftMonth(-1)" [attr.aria-label]="'schedules.calendar.prev' | translate">
+        ‹
+      </button>
+      <button type="button" class="cal-btn" (click)="goToday()">{{ 'schedules.calendar.today' | translate }}</button>
+      <button type="button" class="cal-btn" (click)="shiftMonth(1)" [attr.aria-label]="'schedules.calendar.next' | translate">
+        ›
+      </button>
+      <h3 class="cal__month spds-h5" aria-live="polite">{{ monthDate() | date: 'MMMM yyyy' }}</h3>
+      @if (forecast.loading() || forecast.historyLoading()) {
+        <span class="cal__loading">{{ 'schedules.calendar.loading' | translate }}</span>
+      }
+    </div>
+
+    <div class="cal__filters">
+      <label class="cal__field">
+        <span>{{ 'schedules.calendar.source' | translate }}</span>
+        <p-select
+          [options]="sourceOptions()"
+          optionLabel="label"
+          optionValue="value"
+          [ngModel]="sourceFilter()"
+          (ngModelChange)="sourceFilter.set($event)"
+          [placeholder]="'schedules.calendar.allSources' | translate"
+          [filter]="true"
+          filterBy="label"
+          styleClass="cal__select"
+          appendTo="body"
+        />
+      </label>
+      <label class="cal__field">
+        <span>{{ 'schedules.calendar.timeZone' | translate }}</span>
+        <p-select
+          [options]="timeZoneOptions"
+          optionLabel="label"
+          optionValue="value"
+          [ngModel]="forecast.timeZone()"
+          (ngModelChange)="setTimeZone($event)"
+          [filter]="true"
+          filterBy="label"
+          styleClass="cal__select"
+          appendTo="body"
+        />
+      </label>
+      <button type="button" class="cal-btn" (click)="refresh()" [disabled]="forecast.loading()">
+        {{ 'schedules.calendar.refresh' | translate }}
+      </button>
+    </div>
+  </div>
+  <p class="cal__hint spds-body-small">{{ 'schedules.calendar.timeZoneHint' | translate }}</p>
+
+  <!-- Legend / layer toggles -->
+  <fieldset class="cal__legend">
+    <legend class="cal__sr-only">{{ 'schedules.calendar.layers' | translate }}</legend>
+    @for (kind of kinds; track kind) {
+      <label class="cal__layer">
+        <input type="checkbox" [checked]="layers()[kind]" (change)="toggleLayer(kind, $any($event.target).checked)" />
+        <span [class]="'swatch k-' + kind" aria-hidden="true"></span>
+        {{ 'schedules.calendar.kinds.' + kind | translate }}
+        <span class="cal__count">{{ kindCounts()[kind] }}</span>
+      </label>
+    }
+  </fieldset>
+
+  <!-- Month grid -->
+  <div class="cal__grid" role="grid" [attr.aria-label]="monthDate() | date: 'MMMM yyyy'">
+    <div class="cal__row cal__row--head" role="row">
+      @for (d of weekdayHeaders(); track $index) {
+        <div class="cal__dow" role="columnheader">{{ d | date: 'EEE' }}</div>
+      }
+    </div>
+    @for (week of weeks(); track $index) {
+      <div class="cal__row" role="row">
+        @for (day of week; track day.key) {
+          <button
+            type="button"
+            role="gridcell"
+            class="cal__day"
+            [class.cal__day--out]="!day.inMonth"
+            [class.cal__day--today]="day.isToday"
+            [class.cal__day--selected]="day.key === selectedDayKey()"
+            [class.cal__day--past]="isPast(day)"
+            [attr.aria-selected]="day.key === selectedDayKey()"
+            [attr.aria-label]="dayLabel(day)"
+            (click)="selectDay(day)"
+          >
+            <span class="cal__date">{{ day.date | date: 'd' }}</span>
+            @for (g of chipsFor(day); track g.key) {
+              <span
+                [class]="chipClass(g)"
+                [title]="chipTitle(g)"
+              >
+                @if (g.count === 1) {
+                  <span class="chip__time">{{ g.first | date: 'HH:mm' }}</span>
+                }
+                <span class="chip__title">{{ g.kind === 'IDENTITY_PROCESSING' ? (g.title | translate) : g.title }}</span>
+                @if (g.count > 1) {
+                  <span class="chip__count">×{{ g.count }}</span>
+                }
+              </span>
+            }
+            @if (day.groups.length > maxChips) {
+              <span class="cal__more">{{ 'schedules.calendar.more' | translate: { count: day.groups.length - maxChips } }}</span>
+            }
+          </button>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Day detail -->
+  @if (selectedDay(); as day) {
+    <div class="cal__detail" aria-live="polite">
+      <h4 class="spds-h6">{{ day.date | date: 'fullDate' }}</h4>
+      @if (day.events.length === 0) {
+        <p class="cal__empty">{{ 'schedules.calendar.noEvents' | translate }}</p>
+      } @else {
+        <table class="cal__table">
+          <thead>
+            <tr>
+              <th scope="col">{{ 'schedules.calendar.col.time' | translate }}</th>
+              <th scope="col">{{ 'schedules.calendar.col.kind' | translate }}</th>
+              <th scope="col">{{ 'schedules.calendar.col.name' | translate }}</th>
+              <th scope="col">{{ 'schedules.calendar.col.detail' | translate }}</th>
+              <th scope="col">{{ 'schedules.calendar.col.status' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (e of day.events; track e.id) {
+              <tr>
+                <td class="cal__mono">{{ e.at | date: 'HH:mm' }}</td>
+                <td>
+                  <span [class]="'swatch k-' + e.kind" aria-hidden="true"></span>
+                  {{ 'schedules.calendar.kinds.' + e.kind | translate }}
+                </td>
+                <td>{{ e.kind === 'IDENTITY_PROCESSING' ? (e.title | translate) : e.title }}</td>
+                <td class="cal__mono cal__muted">{{ e.detail }}</td>
+                <td>
+                  @if (e.projected) {
+                    <p-tag severity="secondary" [value]="'schedules.calendar.forecast' | translate" />
+                  } @else {
+                    <p-tag
+                      [severity]="statusSeverity(e.status)"
+                      [value]="e.status ?? ('schedules.calendar.running' | translate)"
+                    />
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </div>
+  }
+</section>

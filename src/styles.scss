@@ -1,0 +1,15 @@
+/* You can add global styles to this file, and also import other style files */
+
+// Placeholder to ensure the compiled stylesheet is not empty.
+// This prevents file upload errors during early deployment phases.
+:root {
+	color-scheme: light;
+}
+
+body {
+  margin: 0;
+}
+
+p, li {
+  line-height: 1.5rem;
+}

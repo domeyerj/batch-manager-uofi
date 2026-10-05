@@ -1,0 +1,69 @@
+<div class="infra-view">
+  <div class="infra-header">
+    <div class="infra-header__titles">
+      <h2 class="spds-h4">Execution Infrastructure & Connector Gateways</h2>
+      <p class="spds-body infra-subtitle">
+        Monitor Virtual Appliance (VA) clusters and Cloud Connector Gateways (CCG) running on-premises source connectors.
+      </p>
+    </div>
+    <p-button
+      label="Refresh Clusters"
+      icon="pi pi-refresh"
+      severity="secondary"
+      [outlined]="true"
+      size="small"
+      (onClick)="refreshClusters()"
+    />
+  </div>
+
+  <div class="infra-card spds-card">
+    <h3 class="spds-h5 card-title">Virtual Appliance Managed Clusters</h3>
+    <p class="spds-body-small text-muted mb-4">
+      If a connector-based aggregation reports TEMPERROR or stalls in flight, check cluster connectivity below.
+    </p>
+
+    @if (taskManager.clusters().length === 0) {
+      <div class="empty-infra-state">
+        <i class="pi pi-server"></i>
+        <div>
+          <p class="spds-body-bold">No Managed VA Clusters Detected</p>
+          <p class="spds-body-small text-muted">
+            All configured sources may be cloud direct-connectors without on-prem Virtual Appliances.
+          </p>
+        </div>
+      </div>
+    } @else {
+      <p-table [value]="taskManager.clusters()" styleClass="p-datatable-sm infra-table">
+        <ng-template pTemplate="header">
+          <tr>
+            <th>Cluster Name</th>
+            <th>Pod</th>
+            <th>CCG Version</th>
+            <th>Client Type</th>
+            <th>Description</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-cluster>
+          <tr>
+            <td>
+              <span class="spds-body-bold">{{ cluster.name }}</span>
+              <span class="spds-caption text-muted font-mono block">{{ cluster.id }}</span>
+            </td>
+            <td>
+              <span class="spds-body-small">{{ cluster.pod || '—' }}</span>
+            </td>
+            <td>
+              <span class="version-badge font-mono">{{ cluster.ccgVersion || '—' }}</span>
+            </td>
+            <td>
+              <span class="spds-body-small">{{ cluster.clientType || 'VA' }}</span>
+            </td>
+            <td>
+              <span class="spds-body-small text-muted">{{ cluster.description || '—' }}</span>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    }
+  </div>
+</div>
