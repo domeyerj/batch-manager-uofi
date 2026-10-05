@@ -1,36 +1,47 @@
 ---
 id: 20261005T191951Z_gemini_fix-calendar-template-and-test-verify
 timestamp: 2026-10-05T19:19:51Z
-updated: 2026-10-05T19:19:51Z
+updated: 2026-10-05T19:27:00Z
 agent: gemini
-status: in-progress
+status: done
 title: "Fix calendar template typing and verify build and tests"
-scope: ""
-related: ""
+scope: "src/app/features/schedules/calendar/schedule-calendar.component.html, src/app/features/schedules/calendar/schedule-calendar.component.ts, src/test-setup.ts"
+related: "20261005T185929Z_claude_schedules-calendar-view"
 ---
 
 # Fix calendar template typing and verify build and tests
 
 ## Goal
-<!-- What the enhancement is for and who asked for it. One to three sentences. -->
+Fix template compile error in ScheduleCalendarComponent (TS7053: indexing issues record with any) reported during `npm test` and `npm run build`, run full test suite, verify build, and provide deployment instructions for the project.
 
 ## Plan
-<!-- The steps you intend to take. Keep this current while the entry is in-progress. -->
+1. Fix TS7053 indexing in `schedule-calendar.component.ts` and `schedule-calendar.component.html` using a typed `activeIssues` computed signal.
+2. Run `npm test` and `npm run build` to verify clean build and all unit tests pass.
+3. Validate changelog with `npm run changelog -- validate`.
+4. Close changelog entry with verification details and provide deployment instructions to the user.
 
 ## Summary
-<!-- Filled in when you close the entry: what changed and why, in plain language. -->
+Fixed a template compilation failure in `ScheduleCalendarComponent` where indexing `forecast.issues()` with `$any(area)` triggered TypeScript error TS7053 with `noImplicitAny`. Introduced a strongly typed `activeIssues` computed signal in the component class that maps active issues cleanly for template consumption.
+
+Also added a `localStorage` fallback polyfill in `src/test-setup.ts` to support Node 22/24 environments where `globalThis.localStorage` is uninitialized without `--localstorage-file`.
+
+Ran the full test suite and production build. All 61 unit tests across 11 test files pass, and the production build compiles successfully with relative assets ready for SailPoint CDN deployment.
 
 ## Changes
-<!-- Files added/changed/removed, each with a short note. -->
+- `src/app/features/schedules/calendar/schedule-calendar.component.ts`: imported `LoadIssue` and defined `activeIssues` computed signal.
+- `src/app/features/schedules/calendar/schedule-calendar.component.html`: replaced `$any(area)` record indexing with iteration over `activeIssues()`.
+- `src/test-setup.ts`: added `localStorage` polyfill for Node 22+ test runners.
 
 ## APIs and scopes
-<!-- Each ISC endpoint used (method + path + operationId), whether it is experimental, and the scope added to sp-ui-plugin.json. Write "none" if there are none. -->
+None. All APIs and scopes were established in previous entries. `sail ui-plugins validate-manifest` confirms `sp-ui-plugin.json` is valid.
 
 ## Verification
-<!-- npm run build / npm test results, manual checks in the tenant (?spPluginDev=), or why they could not be run. -->
+- `npm test`: 11 test files passed, 61 tests passed (0 failures).
+- `npm run build`: succeeded, outputs to `dist/batch-manager-uofi/browser` with relative `<base href="./">` and relative asset bundles.
+- `sail ui-plugins validate-manifest`: reported manifest structure valid offline.
 
 ## Follow-ups / handoff
-<!-- Next steps. Prefix any item meant for the other agent with @claude: or @gemini:. -->
+- @claude: calendar template compilation and test suite verification complete. All 61 unit tests pass cleanly.
 
 ## Needs human
-<!-- Actions only a person can take, e.g. `sail ui-plugins push-manifest`, `upload`, tenant config, approvals. Write "none" if there are none. -->
+- If deploying to a tenant: run `sail ui-plugins push-manifest` and `sail ui-plugins upload` (or `sail ui-plugins deploy`). See deployment instructions.

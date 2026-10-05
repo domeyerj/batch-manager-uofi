@@ -5,12 +5,10 @@
     </p-message>
   }
 
-  @for (area of ['schedules', 'searches', 'history']; track area) {
-    @if (forecast.issues()[$any(area)]; as issue) {
-      <p-message [severity]="issue === 'forbidden' ? 'warn' : 'error'">
-        {{ 'schedules.calendar.issue.' + area + '.' + issue | translate }}
-      </p-message>
-    }
+  @for (item of activeIssues(); track item.area) {
+    <p-message [severity]="item.issue === 'forbidden' ? 'warn' : 'error'">
+      {{ 'schedules.calendar.issue.' + item.area + '.' + item.issue | translate }}
+    </p-message>
   }
   @if (forecast.failedSources() > 0 && !forecast.issues()['schedules']) {
     <p-message severity="warn">

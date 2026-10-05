@@ -17,7 +17,7 @@ import {
   localDayKey,
   monthGridRange,
 } from './forecast-events';
-import { ScheduleForecastService } from './schedule-forecast.service';
+import { ScheduleForecastService, type LoadIssue } from './schedule-forecast.service';
 
 /** Max chips rendered in a day cell before "+N more". */
 const MAX_CHIPS = 3;
@@ -55,6 +55,14 @@ export class ScheduleCalendarComponent {
 
   protected readonly kinds = FORECAST_KINDS;
   protected readonly maxChips = MAX_CHIPS;
+
+  protected readonly activeIssues = computed(() => {
+    const issues = this.forecast.issues() as Partial<Record<'schedules' | 'searches' | 'history', LoadIssue>>;
+    const areas = ['schedules', 'searches', 'history'] as const;
+    return areas
+      .filter((area) => Boolean(issues[area]))
+      .map((area) => ({ area, issue: issues[area]! }));
+  });
 
   /** Injectable clock so tests can pin "now". */
   readonly now = signal(new Date());
